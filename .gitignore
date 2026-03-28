@@ -1,0 +1,38 @@
+## .NET
+bin/
+obj/
+publish/
+
+## User-specific
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docuser
+
+## VS Code / IDE
+.vscode/
+.idea/
+*.swp
+
+## Environment
+appsettings.*.local.json
+.env
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Misc
+*.log
