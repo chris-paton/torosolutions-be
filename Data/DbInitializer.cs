@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ToroSolutions.Api.Models;
 
 namespace ToroSolutions.Api.Data
@@ -13,8 +14,8 @@ namespace ToroSolutions.Api.Data
         /// <param name="context">The database context.</param>
         public static void Initialize(ApplicationDbContext context)
         {
-            // Ensure database is created
-            context.Database.EnsureCreated();
+            // Apply any pending migrations and create database if needed
+            context.Database.Migrate();
 
             // Return if blog posts already seeded
             if (context.BlogPosts.Any())

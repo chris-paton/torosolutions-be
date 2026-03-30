@@ -19,6 +19,9 @@ builder.Services.AddScoped<ICaseStudyService, CaseStudyService>();
 builder.Services.AddScoped<IPageContentService, PageContentService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 
+// Register HttpClient and image upload service
+builder.Services.AddHttpClient<IImageUploadService, ImageUploadService>();
+
 // Add controllers
 builder.Services.AddControllers();
 
@@ -77,15 +80,12 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Initialize the database with seed data in development
-if (app.Environment.IsDevelopment())
+// Apply migrations and seed data on startup
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        DbInitializer.Initialize(context);
-    }
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    DbInitializer.Initialize(context);
 }
 
 // Configure the HTTP request pipeline
