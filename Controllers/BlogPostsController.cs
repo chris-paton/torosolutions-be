@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using ToroSolutions.Api.DTOs;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
 {
     /// <summary>
     /// API controller for blog post operations.
+    /// Public endpoints return the rich blog format (posts wrapped in pagination, author/category as objects, tags array).
+    /// Admin endpoints (admin/all, POST, PUT, DELETE) return the legacy flat shape used by the existing admin UI.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -14,38 +17,31 @@ namespace ToroSolutions.Api.Controllers
         private readonly IBlogPostService _blogPostService;
         private readonly ILogger<BlogPostsController> _logger;
 
-        /// <summary>
-        /// Initializes a new instance of the BlogPostsController.
-        /// </summary>
-        /// <param name="blogPostService">Blog post service.</param>
-        /// <param name="logger">Logger instance.</param>
         public BlogPostsController(IBlogPostService blogPostService, ILogger<BlogPostsController> logger)
         {
             _blogPostService = blogPostService;
             _logger = logger;
         }
 
+        // ===== Public (rich) =====
+
         /// <summary>
-        /// Gets a paginated list of published blog posts.
+        /// Paginated published posts in the rich format. Supports category, tag, search and featured filters.
         /// </summary>
-        /// <param name="page">Page number (default 1).</param>
-        /// <param name="pageSize">Items per page (default 10).</param>
-        /// <param name="category">Optional category filter.</param>
-        /// <param name="featured">Optional filter for featured posts.</param>
-        /// <returns>List of published blog posts.</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<BlogPostDetailDto>>> GetPublishedPosts(
+        public async Task<ActionResult<PaginatedBlogPostsDto>> GetPublishedPosts(
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            [FromQuery] int pageSize = 12,
             [FromQuery] string? category = null,
+            [FromQuery] string? tag = null,
+            [FromQuery] string? search = null,
             [FromQuery] bool? featured = null)
         {
             try
             {
-                var posts = await _blogPostService.GetPublishedPostsAsync(page, pageSize, category, featured);
-                return Ok(posts);
+                var result = await _blogPostService.GetPublicPostsAsync(page, pageSize, category, tag, search, featured);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -55,49 +51,55 @@ namespace ToroSolutions.Api.Controllers
         }
 
         /// <summary>
-        /// Gets a single published blog post by slug.
+        /// All categories with post counts (only categories with at least one published post).
         /// </summary>
-        /// <param name="slug">The blog post slug.</param>
-        /// <returns>Blog post details.</returns>
-        [HttpGet("{slug}")]
+        [HttpGet("categories")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<BlogPostDetailDto>> GetPostBySlug(string slug)
+        public async Task<ActionResult<List<BlogCategoryDto>>> GetCategories()
         {
             try
             {
-                var post = await _blogPostService.GetPostBySlugAsync(slug);
-                if (post == null)
-                {
-                    return NotFound(new { message = "Blog post not found" });
-                }
-                return Ok(post);
+                return Ok(await _blogPostService.GetCategoriesAsync());
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting blog post by slug: {Slug}", slug);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error retrieving blog post" });
+                _logger.LogError(ex, "Error getting categories");
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error retrieving categories" });
             }
         }
 
         /// <summary>
-        /// Gets all blog posts (admin endpoint).
+        /// All tags with post counts (only tags used by at least one published post).
         /// </summary>
-        /// <param name="page">Page number (default 1).</param>
-        /// <param name="pageSize">Items per page (default 10).</param>
-        /// <returns>All blog posts.</returns>
-        [HttpGet("admin/all")]
+        [HttpGet("tags")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<BlogPostDetailDto>>> GetAllPosts(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<List<BlogTagDto>>> GetTags()
         {
             try
             {
-                var posts = await _blogPostService.GetAllPostsAsync(page, pageSize);
-                return Ok(posts);
+                return Ok(await _blogPostService.GetTagsAsync());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting tags");
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error retrieving tags" });
+            }
+        }
+
+        /// <summary>
+        /// All admin posts (drafts + published). Returns the flat shape consumed by the admin UI.
+        /// Defined before the {slug} route so "admin" doesn't get matched as a slug.
+        /// </summary>
+        [HttpGet("admin/all")]
+        [ApiKeyAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<BlogPostDetailDto>>> GetAllPosts(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                return Ok(await _blogPostService.GetAllPostsAsync(page, pageSize));
             }
             catch (Exception ex)
             {
@@ -107,23 +109,56 @@ namespace ToroSolutions.Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new blog post.
+        /// Posts related to a given slug (same category, falls back to most-recent published).
         /// </summary>
-        /// <param name="dto">Blog post creation data.</param>
-        /// <returns>Created blog post.</returns>
+        [HttpGet("{slug}/related")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<BlogPostSummaryDto>>> GetRelatedPosts(string slug, [FromQuery] int limit = 3)
+        {
+            try
+            {
+                return Ok(await _blogPostService.GetRelatedPostsAsync(slug, limit));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting related posts for slug: {Slug}", slug);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error retrieving related posts" });
+            }
+        }
+
+        /// <summary>
+        /// Single published post by slug (rich shape).
+        /// </summary>
+        [HttpGet("{slug}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BlogPostPublicDto>> GetPostBySlug(string slug)
+        {
+            try
+            {
+                var post = await _blogPostService.GetPublicPostBySlugAsync(slug);
+                if (post == null) return NotFound(new { message = "Blog post not found" });
+                return Ok(post);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blog post by slug: {Slug}", slug);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error retrieving blog post" });
+            }
+        }
+
+        // ===== Admin write operations (flat) =====
+
         [HttpPost]
+        [ApiKeyAuthorize]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<BlogPostDetailDto>> CreatePost([FromBody] BlogPostDto dto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
+                if (!ModelState.IsValid) return BadRequest(ModelState);
                 var post = await _blogPostService.CreatePostAsync(dto);
                 return CreatedAtAction(nameof(GetPostBySlug), new { slug = post.Slug }, post);
             }
@@ -139,31 +174,19 @@ namespace ToroSolutions.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Updates an existing blog post.
-        /// </summary>
-        /// <param name="id">The blog post ID.</param>
-        /// <param name="dto">Updated blog post data.</param>
-        /// <returns>Updated blog post.</returns>
         [HttpPut("{id}")]
+        [ApiKeyAuthorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<BlogPostDetailDto>> UpdatePost(int id, [FromBody] BlogPostDto dto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
+                if (!ModelState.IsValid) return BadRequest(ModelState);
                 var post = await _blogPostService.UpdatePostAsync(id, dto);
-                if (post == null)
-                {
-                    return NotFound(new { message = "Blog post not found" });
-                }
+                if (post == null) return NotFound(new { message = "Blog post not found" });
                 return Ok(post);
             }
             catch (ArgumentException ex)
@@ -178,24 +201,17 @@ namespace ToroSolutions.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Deletes a blog post.
-        /// </summary>
-        /// <param name="id">The blog post ID.</param>
-        /// <returns>No content.</returns>
         [HttpDelete("{id}")]
+        [ApiKeyAuthorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> DeletePost(int id)
         {
             try
             {
                 var success = await _blogPostService.DeletePostAsync(id);
-                if (!success)
-                {
-                    return NotFound(new { message = "Blog post not found" });
-                }
+                if (!success) return NotFound(new { message = "Blog post not found" });
                 return NoContent();
             }
             catch (Exception ex)

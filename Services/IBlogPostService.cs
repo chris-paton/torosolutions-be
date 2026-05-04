@@ -7,51 +7,55 @@ namespace ToroSolutions.Api.Services
     /// </summary>
     public interface IBlogPostService
     {
-        /// <summary>
-        /// Gets a paginated list of published blog posts.
-        /// </summary>
-        /// <param name="page">Page number (starting at 1).</param>
-        /// <param name="pageSize">Number of items per page.</param>
-        /// <param name="category">Optional category filter.</param>
-        /// <param name="featured">Optional filter for featured posts only.</param>
-        /// <returns>List of blog post details.</returns>
-        Task<List<BlogPostDetailDto>> GetPublishedPostsAsync(int page = 1, int pageSize = 10, string? category = null, bool? featured = null);
+        // ===== Public (rich) endpoints =====
 
         /// <summary>
-        /// Gets a single published blog post by slug.
+        /// Returns paginated published posts with optional category/tag/search filters,
+        /// in the rich shape consumed by the public blog frontend.
         /// </summary>
-        /// <param name="slug">The blog post slug.</param>
-        /// <returns>Blog post details or null if not found.</returns>
-        Task<BlogPostDetailDto?> GetPostBySlugAsync(string slug);
+        Task<PaginatedBlogPostsDto> GetPublicPostsAsync(int page = 1, int pageSize = 12, string? category = null, string? tag = null, string? search = null, bool? featured = null);
 
         /// <summary>
-        /// Gets all blog posts (for admin use).
+        /// Returns a single published post by slug in the rich shape.
         /// </summary>
-        /// <param name="page">Page number (starting at 1).</param>
-        /// <param name="pageSize">Number of items per page.</param>
-        /// <returns>List of all blog post details.</returns>
+        Task<BlogPostPublicDto?> GetPublicPostBySlugAsync(string slug);
+
+        /// <summary>
+        /// Returns posts related to the given slug (same category, excluding the post itself).
+        /// Falls back to most recent published posts if there are no category matches.
+        /// </summary>
+        Task<List<BlogPostSummaryDto>> GetRelatedPostsAsync(string slug, int limit = 3);
+
+        /// <summary>
+        /// Returns all categories used by published posts, with post counts.
+        /// </summary>
+        Task<List<BlogCategoryDto>> GetCategoriesAsync();
+
+        /// <summary>
+        /// Returns all tags used by published posts, with post counts.
+        /// </summary>
+        Task<List<BlogTagDto>> GetTagsAsync();
+
+        // ===== Admin (flat) endpoints — preserved for existing admin UI =====
+
+        /// <summary>
+        /// Returns a flat list of all posts (drafts + published) for admin listing.
+        /// </summary>
         Task<List<BlogPostDetailDto>> GetAllPostsAsync(int page = 1, int pageSize = 10);
 
         /// <summary>
-        /// Creates a new blog post.
+        /// Creates a new post. Accepts both legacy flat input and rich input (Tags, MetaTitle, etc.).
         /// </summary>
-        /// <param name="dto">Blog post creation data.</param>
-        /// <returns>The created blog post details.</returns>
         Task<BlogPostDetailDto> CreatePostAsync(BlogPostDto dto);
 
         /// <summary>
-        /// Updates an existing blog post.
+        /// Updates an existing post.
         /// </summary>
-        /// <param name="id">The blog post ID.</param>
-        /// <param name="dto">Updated blog post data.</param>
-        /// <returns>The updated blog post details.</returns>
         Task<BlogPostDetailDto?> UpdatePostAsync(int id, BlogPostDto dto);
 
         /// <summary>
-        /// Deletes a blog post.
+        /// Deletes a post.
         /// </summary>
-        /// <param name="id">The blog post ID.</param>
-        /// <returns>True if deletion was successful, false if not found.</returns>
         Task<bool> DeletePostAsync(int id);
     }
 }

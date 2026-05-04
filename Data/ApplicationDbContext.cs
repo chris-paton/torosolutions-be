@@ -8,63 +8,83 @@ namespace ToroSolutions.Api.Data
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
-        /// <summary>
-        /// Initializes a new instance of the ApplicationDbContext.
-        /// </summary>
-        /// <param name="options">Database context options.</param>
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
 
-        /// <summary>
-        /// Blog posts in the database.
-        /// </summary>
         public DbSet<BlogPost> BlogPosts { get; set; } = null!;
-
-        /// <summary>
-        /// Case studies in the database.
-        /// </summary>
+        public DbSet<BlogAuthor> BlogAuthors { get; set; } = null!;
+        public DbSet<BlogCategory> BlogCategories { get; set; } = null!;
+        public DbSet<BlogTag> BlogTags { get; set; } = null!;
+        public DbSet<BlogPostTag> BlogPostTags { get; set; } = null!;
         public DbSet<CaseStudy> CaseStudies { get; set; } = null!;
-
-        /// <summary>
-        /// Dynamic page content.
-        /// </summary>
         public DbSet<PageContent> PageContents { get; set; } = null!;
-
-        /// <summary>
-        /// Contact form submissions.
-        /// </summary>
         public DbSet<ContactSubmission> ContactSubmissions { get; set; } = null!;
-
-        /// <summary>
-        /// Site-wide settings.
-        /// </summary>
         public DbSet<SiteSettings> SiteSettings { get; set; } = null!;
 
-        /// <summary>
-        /// Configures the database schema and constraints.
-        /// </summary>
-        /// <param name="modelBuilder">The model builder.</param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure BlogPost constraints
+            // BlogPost
             modelBuilder.Entity<BlogPost>()
                 .HasIndex(b => b.Slug)
                 .IsUnique();
 
-            // Configure CaseStudy constraints
+            modelBuilder.Entity<BlogPost>()
+                .HasOne(b => b.BlogAuthor)
+                .WithMany(a => a.Posts)
+                .HasForeignKey(b => b.BlogAuthorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<BlogPost>()
+                .HasOne(b => b.BlogCategory)
+                .WithMany(c => c.Posts)
+                .HasForeignKey(b => b.BlogCategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // BlogAuthor
+            modelBuilder.Entity<BlogAuthor>()
+                .HasIndex(a => a.Slug)
+                .IsUnique();
+
+            // BlogCategory
+            modelBuilder.Entity<BlogCategory>()
+                .HasIndex(c => c.Slug)
+                .IsUnique();
+
+            // BlogTag
+            modelBuilder.Entity<BlogTag>()
+                .HasIndex(t => t.Slug)
+                .IsUnique();
+
+            // BlogPostTag (join)
+            modelBuilder.Entity<BlogPostTag>()
+                .HasKey(pt => new { pt.BlogPostId, pt.BlogTagId });
+
+            modelBuilder.Entity<BlogPostTag>()
+                .HasOne(pt => pt.BlogPost)
+                .WithMany(p => p.PostTags)
+                .HasForeignKey(pt => pt.BlogPostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BlogPostTag>()
+                .HasOne(pt => pt.BlogTag)
+                .WithMany(t => t.PostTags)
+                .HasForeignKey(pt => pt.BlogTagId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // CaseStudy
             modelBuilder.Entity<CaseStudy>()
                 .HasIndex(c => c.Slug)
                 .IsUnique();
 
-            // Configure PageContent constraints - unique combination of PageSlug and SectionKey
+            // PageContent
             modelBuilder.Entity<PageContent>()
                 .HasIndex(p => new { p.PageSlug, p.SectionKey })
                 .IsUnique();
 
-            // Configure ContactSubmission indexes
+            // ContactSubmission
             modelBuilder.Entity<ContactSubmission>()
                 .HasIndex(c => c.Email);
 

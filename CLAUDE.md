@@ -13,7 +13,7 @@
 ## Build & Run Commands
 ```bash
 dotnet build                    # Build project
-dotnet run                      # Run (dev: http://localhost:5000, Swagger at root)
+dotnet run                      # Run (dev: http://localhost:5000, Swagger at /swagger)
 dotnet ef migrations add <Name> # Create EF migration
 dotnet ef database update       # Apply migrations
 dotnet test                     # Run tests (if test project exists)
@@ -54,12 +54,17 @@ ToroSolutionsBE/
 ## API Routes
 
 ### Blog Posts (`/api/blogposts`)
+Public endpoints return the rich blog format (objects for author/category, tags array, pagination wrapper). Admin endpoints (`/admin/all`, POST/PUT/DELETE) return the legacy flat shape so the existing admin UI keeps working.
+
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/api/blogposts` | Published posts (paginated, filterable by category/featured) |
-| GET | `/api/blogposts/{slug}` | Single published post by slug |
-| GET | `/api/blogposts/admin/all` | All posts including drafts (admin) |
-| POST | `/api/blogposts` | Create post |
+| GET | `/api/blogposts` | Published posts in `{posts, pagination}` format. Filters: `category`, `tag`, `search`, `featured`, `page`, `pageSize` |
+| GET | `/api/blogposts/{slug}` | Single published post by slug (rich shape) |
+| GET | `/api/blogposts/{slug}/related` | Related posts by category, falling back to most-recent (`?limit=3`) |
+| GET | `/api/blogposts/categories` | Categories with post counts |
+| GET | `/api/blogposts/tags` | Tags with post counts |
+| GET | `/api/blogposts/admin/all` | All posts including drafts (flat shape for admin UI) |
+| POST | `/api/blogposts` | Create post (accepts rich input incl. `tags`, `metaTitle`, `metaDescription`, `wordCount`, etc.) |
 | PUT | `/api/blogposts/{id}` | Update post |
 | DELETE | `/api/blogposts/{id}` | Delete post |
 
@@ -93,7 +98,11 @@ ToroSolutionsBE/
 | GET | `/api/dashboard/stats` | Aggregate stats (counts, unread) |
 
 ## Database Schema
-- **BlogPost**: Id(PK), Title, Slug(unique), Category, Content, Excerpt, FeaturedImageUrl, Author, ReadTimeMinutes, IsPublished, IsFeatured, PublishedAt, CreatedAt, UpdatedAt
+- **BlogPost**: Id(PK), Title, Slug(unique), Category(legacy string), BlogCategoryId(FK→BlogCategories, nullable), Content, Excerpt, FeaturedImageUrl, FeaturedImageAlt, FeaturedImageWidth, FeaturedImageHeight, Author(legacy string), BlogAuthorId(FK→BlogAuthors, nullable), ReadTimeMinutes, WordCount, MetaTitle, MetaDescription, CanonicalUrl, IsPublished, IsFeatured, PublishedAt, CreatedAt, UpdatedAt
+- **BlogAuthor**: Id(PK), Name, Slug(unique), Bio, AvatarUrl, Role, TwitterUrl, LinkedinUrl, InstagramUrl, CreatedAt, UpdatedAt
+- **BlogCategory**: Id(PK), Name, Slug(unique), Description, CreatedAt, UpdatedAt
+- **BlogTag**: Id(PK), Name, Slug(unique), CreatedAt
+- **BlogPostTag**: BlogPostId + BlogTagId composite PK (many-to-many join)
 - **CaseStudy**: Id(PK), Title, Slug(unique), Industry, Services, ResultMetric, ResultDescription, Content, ClientName, FeaturedImageUrl, IsPublished, IsFeatured, CreatedAt, UpdatedAt
 - **PageContent**: Id(PK), PageSlug, SectionKey, Content, ContentType, UpdatedAt. Unique: (PageSlug, SectionKey)
 - **ContactSubmission**: Id(PK), FullName, Email(indexed), Company, Subject, Message, IsRead(indexed), CreatedAt

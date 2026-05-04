@@ -7,83 +7,74 @@ namespace ToroSolutions.Api.Models
     /// </summary>
     public class BlogPost
     {
-        /// <summary>
-        /// Unique identifier for the blog post.
-        /// </summary>
         [Key]
         public int Id { get; set; }
 
-        /// <summary>
-        /// Title of the blog post (max 200 characters).
-        /// </summary>
         [Required]
         [StringLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        /// <summary>
-        /// URL-friendly slug derived from the title (max 200 characters, unique).
-        /// </summary>
         [Required]
         [StringLength(200)]
         public string Slug { get; set; } = string.Empty;
 
         /// <summary>
-        /// Category for the blog post (max 100 characters).
+        /// Legacy category string. Prefer BlogCategoryId/BlogCategory navigation when set.
+        /// Kept for backward compatibility with the existing admin UI.
         /// </summary>
         [StringLength(100)]
         public string? Category { get; set; }
 
-        /// <summary>
-        /// Full HTML content of the blog post.
-        /// </summary>
+        public int? BlogCategoryId { get; set; }
+        public BlogCategory? BlogCategory { get; set; }
+
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Brief excerpt of the blog post (max 500 characters).
-        /// </summary>
         [StringLength(500)]
         public string? Excerpt { get; set; }
 
-        /// <summary>
-        /// URL to the featured image for the blog post.
-        /// </summary>
         public string? FeaturedImageUrl { get; set; }
 
+        [StringLength(200)]
+        public string? FeaturedImageAlt { get; set; }
+
+        public int? FeaturedImageWidth { get; set; }
+
+        public int? FeaturedImageHeight { get; set; }
+
         /// <summary>
-        /// Author of the blog post (defaults to "Chris Paton", max 100 characters).
+        /// Legacy author name string. Prefer BlogAuthorId/BlogAuthor navigation when set.
         /// </summary>
         [StringLength(100)]
         public string Author { get; set; } = "Chris Paton";
 
-        /// <summary>
-        /// Estimated read time in minutes (defaults to 5).
-        /// </summary>
+        public int? BlogAuthorId { get; set; }
+        public BlogAuthor? BlogAuthor { get; set; }
+
         public int ReadTimeMinutes { get; set; } = 5;
 
-        /// <summary>
-        /// Indicates whether the blog post is published.
-        /// </summary>
+        public int? WordCount { get; set; }
+
+        [StringLength(200)]
+        public string? MetaTitle { get; set; }
+
+        [StringLength(500)]
+        public string? MetaDescription { get; set; }
+
+        [StringLength(500)]
+        public string? CanonicalUrl { get; set; }
+
         public bool IsPublished { get; set; } = false;
 
-        /// <summary>
-        /// Indicates whether the blog post is featured on the home page.
-        /// </summary>
         public bool IsFeatured { get; set; } = false;
 
-        /// <summary>
-        /// Timestamp when the blog post was published.
-        /// </summary>
         public DateTime? PublishedAt { get; set; }
 
-        /// <summary>
-        /// Timestamp when the blog post was created.
-        /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        /// <summary>
-        /// Timestamp when the blog post was last updated.
-        /// </summary>
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<BlogPostTag> PostTags { get; set; } = new List<BlogPostTag>();
     }
 }

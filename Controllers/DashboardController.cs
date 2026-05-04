@@ -46,8 +46,8 @@ namespace ToroSolutions.Api.Controllers
         {
             try
             {
-                // Get all posts (published)
-                var posts = await _blogPostService.GetPublishedPostsAsync(page: 1, pageSize: 1000);
+                // Get all posts (admin view returns drafts + published; total counts both)
+                var posts = await _blogPostService.GetAllPostsAsync(page: 1, pageSize: 1000);
                 var totalPosts = posts.Count;
 
                 // Get all case studies (published)

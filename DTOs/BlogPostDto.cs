@@ -3,146 +3,91 @@ using System.ComponentModel.DataAnnotations;
 namespace ToroSolutions.Api.DTOs
 {
     /// <summary>
-    /// DTO for creating or updating a blog post.
+    /// Input DTO for creating or updating a blog post.
+    /// Accepts both legacy flat fields (Author/Category as strings) and rich fields (Tags, MetaTitle, etc.)
+    /// so both the existing admin UI and Verqos publishes can target the same endpoint.
     /// </summary>
     public class BlogPostDto
     {
-        /// <summary>
-        /// Title of the blog post.
-        /// </summary>
         [Required]
         [StringLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        /// <summary>
-        /// URL-friendly slug (auto-generated if not provided).
-        /// </summary>
         [StringLength(200)]
         public string? Slug { get; set; }
 
-        /// <summary>
-        /// Category for the blog post.
-        /// </summary>
         [StringLength(100)]
         public string? Category { get; set; }
 
-        /// <summary>
-        /// Full HTML content of the blog post.
-        /// </summary>
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Brief excerpt of the blog post.
-        /// </summary>
         [StringLength(500)]
         public string? Excerpt { get; set; }
 
-        /// <summary>
-        /// URL to the featured image.
-        /// </summary>
         public string? FeaturedImageUrl { get; set; }
 
-        /// <summary>
-        /// Author of the blog post.
-        /// </summary>
+        [StringLength(200)]
+        public string? FeaturedImageAlt { get; set; }
+
+        public int? FeaturedImageWidth { get; set; }
+
+        public int? FeaturedImageHeight { get; set; }
+
         [StringLength(100)]
         public string? Author { get; set; }
 
-        /// <summary>
-        /// Estimated read time in minutes.
-        /// </summary>
         public int? ReadTimeMinutes { get; set; }
 
+        public int? WordCount { get; set; }
+
+        [StringLength(200)]
+        public string? MetaTitle { get; set; }
+
+        [StringLength(500)]
+        public string? MetaDescription { get; set; }
+
+        [StringLength(500)]
+        public string? CanonicalUrl { get; set; }
+
         /// <summary>
-        /// Whether the post is published.
+        /// Tag names. Tags are looked up by name and created if they don't exist.
         /// </summary>
+        public List<string>? Tags { get; set; }
+
         public bool? IsPublished { get; set; }
 
-        /// <summary>
-        /// Whether the post is featured.
-        /// </summary>
         public bool? IsFeatured { get; set; }
 
-        /// <summary>
-        /// When the post was published.
-        /// </summary>
         public DateTime? PublishedAt { get; set; }
+
+        /// <summary>
+        /// Optional string status accepted from Verqos ("published" | "draft" | "archived").
+        /// If set, takes precedence over IsPublished. Lets Verqos's DotNetApi adapter
+        /// (which sends a "status" string) flip the post live without needing a custom mapping.
+        /// </summary>
+        [StringLength(20)]
+        public string? Status { get; set; }
     }
 
     /// <summary>
-    /// DTO for returning blog post details to clients.
+    /// Flat blog post DTO returned by admin endpoints (preserves the existing admin UI contract).
     /// </summary>
     public class BlogPostDetailDto
     {
-        /// <summary>
-        /// Unique identifier.
-        /// </summary>
         public int Id { get; set; }
-
-        /// <summary>
-        /// Title of the blog post.
-        /// </summary>
         public string Title { get; set; } = string.Empty;
-
-        /// <summary>
-        /// URL-friendly slug.
-        /// </summary>
         public string Slug { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Category for the blog post.
-        /// </summary>
         public string? Category { get; set; }
-
-        /// <summary>
-        /// Full HTML content.
-        /// </summary>
         public string Content { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Brief excerpt.
-        /// </summary>
         public string? Excerpt { get; set; }
-
-        /// <summary>
-        /// URL to the featured image.
-        /// </summary>
         public string? FeaturedImageUrl { get; set; }
-
-        /// <summary>
-        /// Author name.
-        /// </summary>
         public string Author { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Estimated read time in minutes.
-        /// </summary>
         public int ReadTimeMinutes { get; set; }
-
-        /// <summary>
-        /// Whether the post is published.
-        /// </summary>
         public bool IsPublished { get; set; }
-
-        /// <summary>
-        /// Whether the post is featured.
-        /// </summary>
         public bool IsFeatured { get; set; }
-
-        /// <summary>
-        /// When the post was published.
-        /// </summary>
         public DateTime? PublishedAt { get; set; }
-
-        /// <summary>
-        /// Creation timestamp.
-        /// </summary>
         public DateTime CreatedAt { get; set; }
-
-        /// <summary>
-        /// Last update timestamp.
-        /// </summary>
         public DateTime UpdatedAt { get; set; }
     }
 }
