@@ -152,6 +152,7 @@ namespace ToroSolutions.Api.Controllers
         [HttpPost]
         [ApiKeyAuthorize]
         [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<BlogPostDetailDto>> CreatePost([FromBody] BlogPostDto dto)
@@ -161,6 +162,10 @@ namespace ToroSolutions.Api.Controllers
                 if (!ModelState.IsValid) return BadRequest(ModelState);
                 var post = await _blogPostService.CreatePostAsync(dto);
                 return CreatedAtAction(nameof(GetPostBySlug), new { slug = post.Slug }, post);
+            }
+            catch (SlugConflictException ex)
+            {
+                return Conflict(new { message = ex.Message, slug = ex.Slug });
             }
             catch (ArgumentException ex)
             {
@@ -188,6 +193,10 @@ namespace ToroSolutions.Api.Controllers
                 var post = await _blogPostService.UpdatePostAsync(id, dto);
                 if (post == null) return NotFound(new { message = "Blog post not found" });
                 return Ok(post);
+            }
+            catch (SlugConflictException ex)
+            {
+                return Conflict(new { message = ex.Message, slug = ex.Slug });
             }
             catch (ArgumentException ex)
             {

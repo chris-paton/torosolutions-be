@@ -234,10 +234,14 @@ namespace ToroSolutions.Api.Services
         {
             try
             {
+                var slug = string.IsNullOrWhiteSpace(dto.Slug) ? GenerateSlug(dto.Title) : dto.Slug;
+                if (await _context.BlogPosts.AnyAsync(p => p.Slug == slug))
+                    throw new SlugConflictException(slug);
+
                 var post = new BlogPost
                 {
                     Title = dto.Title,
-                    Slug = string.IsNullOrWhiteSpace(dto.Slug) ? GenerateSlug(dto.Title) : dto.Slug,
+                    Slug = slug,
                     Category = dto.Category,
                     Content = dto.Content,
                     Excerpt = dto.Excerpt,
@@ -304,8 +308,12 @@ namespace ToroSolutions.Api.Services
                     return null;
                 }
 
+                var newSlug = string.IsNullOrWhiteSpace(dto.Slug) ? post.Slug : dto.Slug;
+                if (newSlug != post.Slug && await _context.BlogPosts.AnyAsync(p => p.Slug == newSlug && p.Id != id))
+                    throw new SlugConflictException(newSlug);
+
                 post.Title = dto.Title;
-                post.Slug = string.IsNullOrWhiteSpace(dto.Slug) ? post.Slug : dto.Slug;
+                post.Slug = newSlug;
                 post.Category = dto.Category ?? post.Category;
                 post.Content = dto.Content;
                 post.Excerpt = dto.Excerpt ?? post.Excerpt;
