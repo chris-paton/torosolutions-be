@@ -25,8 +25,9 @@ namespace ToroSolutions.Api.Services
             {
                 var uploadUrl = _configuration["ImageUpload:UploadUrl"]
                     ?? throw new InvalidOperationException("ImageUpload:UploadUrl not configured");
-                var apiKey = _configuration["ImageUpload:ApiKey"]
-                    ?? throw new InvalidOperationException("ImageUpload:ApiKey not configured");
+                var apiKey = _configuration["ImageUpload:ApiKey"];
+                if (string.IsNullOrWhiteSpace(apiKey))
+                    throw new InvalidOperationException("ImageUpload:ApiKey not configured");
 
                 using var content = new MultipartFormDataContent();
 

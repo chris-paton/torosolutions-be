@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ToroSolutions.Api.DTOs;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
@@ -85,6 +86,7 @@ namespace ToroSolutions.Api.Controllers
         /// <param name="page">Page number (default 1).</param>
         /// <param name="pageSize">Items per page (default 10).</param>
         /// <returns>All case studies.</returns>
+        [ApiKeyAuthorize]
         [HttpGet("admin/all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -109,6 +111,7 @@ namespace ToroSolutions.Api.Controllers
         /// </summary>
         /// <param name="dto">Case study creation data.</param>
         /// <returns>Created case study.</returns>
+        [ApiKeyAuthorize]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -143,6 +146,7 @@ namespace ToroSolutions.Api.Controllers
         /// <param name="id">The case study ID.</param>
         /// <param name="dto">Updated case study data.</param>
         /// <returns>Updated case study.</returns>
+        [ApiKeyAuthorize]
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -181,6 +185,7 @@ namespace ToroSolutions.Api.Controllers
         /// </summary>
         /// <param name="id">The case study ID.</param>
         /// <returns>No content.</returns>
+        [ApiKeyAuthorize]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

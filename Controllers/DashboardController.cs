@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ToroSolutions.Api.DTOs;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
@@ -39,6 +40,7 @@ namespace ToroSolutions.Api.Controllers
         /// Gets dashboard statistics.
         /// </summary>
         /// <returns>Dashboard statistics.</returns>
+        [ApiKeyAuthorize]
         [HttpGet("stats")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

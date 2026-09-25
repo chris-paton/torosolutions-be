@@ -5,6 +5,13 @@ using ToroSolutions.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Secrets (ApiKeys:Admin, ImageUpload:ApiKey, connection string) live outside git: either in
+// environment variables (ApiKeys__Admin, ImageUpload__ApiKey) or in a git-ignored
+// appsettings.{Environment}.local.json next to the app. Env vars still win over both files.
+builder.Configuration
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.local.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 // Add services to the container
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(

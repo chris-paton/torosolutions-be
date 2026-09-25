@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ToroSolutions.Api.DTOs;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
@@ -92,6 +93,7 @@ namespace ToroSolutions.Api.Controllers
         /// </summary>
         /// <param name="dto">Page content update data.</param>
         /// <returns>Updated page content.</returns>
+        [ApiKeyAuthorize]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

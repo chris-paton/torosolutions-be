@@ -19,8 +19,16 @@ dotnet ef database update       # Apply migrations
 dotnet test                     # Run tests (if test project exists)
 ```
 
+## Authentication
+Every admin read and every write requires the `X-API-Key` header (`[ApiKeyAuthorize]`, compared with `ApiKeys:Admin`; returns 503 if the key isn't configured, 401 if it's wrong). Anonymous access is limited to: published blog posts/categories/tags/related, published case studies, page content GETs, and `POST /api/contact`.
+
+The Next.js admin never sends the key from the browser: it calls same-origin `/api/admin/*` proxies (behind the admin passphrase session) that add the key server-side from `TORO_ADMIN_API_KEY`. Verqos sends the key directly.
+
+## Secrets
+Never commit secrets. `ApiKeys:Admin`, `ImageUpload:ApiKey` and the connection string come from environment variables (`ApiKeys__Admin`, `ImageUpload__ApiKey`, `ConnectionStrings__DefaultConnection`) or a git-ignored `appsettings.{Environment}.local.json` beside the app (loaded in Program.cs). The committed JSON files keep these values empty.
+
 ## Configuration
-- `appsettings.json` - Production config
+- `appsettings.json` - Production config (no secrets)
 - `appsettings.Development.json` - Dev overrides (debug logging)
 - Connection string: `Server=localhost;Database=ToroSolutions;Trusted_Connection=true`
 - CORS origins: `http://localhost:3000`, `https://toro-solutions.com`

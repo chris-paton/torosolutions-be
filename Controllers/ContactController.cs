@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ToroSolutions.Api.DTOs;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
@@ -64,6 +65,7 @@ namespace ToroSolutions.Api.Controllers
         /// <param name="page">Page number (default 1).</param>
         /// <param name="pageSize">Items per page (default 20).</param>
         /// <returns>List of contact submissions.</returns>
+        [ApiKeyAuthorize]
         [HttpGet("submissions")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -88,6 +90,7 @@ namespace ToroSolutions.Api.Controllers
         /// </summary>
         /// <param name="id">The submission ID.</param>
         /// <returns>Updated submission details.</returns>
+        [ApiKeyAuthorize]
         [HttpPut("submissions/{id}/read")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

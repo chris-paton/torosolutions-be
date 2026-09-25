@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ToroSolutions.Api.Middleware;
 using ToroSolutions.Api.Services;
 
 namespace ToroSolutions.Api.Controllers
@@ -27,6 +28,7 @@ namespace ToroSolutions.Api.Controllers
         /// <param name="folder">Optional subfolder (e.g., "blog", "case-studies").</param>
         /// <param name="filename">Optional custom filename.</param>
         /// <returns>The public URL and metadata of the uploaded image.</returns>
+        [ApiKeyAuthorize]
         [HttpPost("upload")]
         [RequestSizeLimit(20_971_520)] // 20MB to match image upload API
         public async Task<IActionResult> Upload(IFormFile image, [FromForm] string? folder = null, [FromForm] string? filename = null)
